@@ -10,7 +10,9 @@ namespace ReliableDownloader
     using System.Collections.Concurrent;
     using System.Diagnostics;
     using System.IO;
+    using System.Linq;
     using System.Net.Http;
+    using System.Security.Cryptography;
     using System.Threading;
     using System.Threading.Tasks;
 
@@ -25,7 +27,7 @@ namespace ReliableDownloader
         /// Keeping it small to test the behavior
         /// We can decrease the batch size on network
         /// </summary>
-        private const long BatchSize = 8192L;
+        private const long BatchSize = 262144L;
 
         /// <summary>
         /// The web client for making the web requests
@@ -65,12 +67,11 @@ namespace ReliableDownloader
 
             return new Task<bool>(() =>
             {
-                DownloadAsync(contentFileUrl, localFilePath, onProgressChanged, tokenSource.Token).Wait();
-                return true;
+                return DownloadAsync(contentFileUrl, localFilePath, onProgressChanged, tokenSource.Token).Result;
             }, tokenSource.Token);
         }
 
-        private async Task DownloadAsync(string contentFileUrl, string localFilePath, Action<FileProgress> onProgressChanged, CancellationToken cancellationToken)
+        private async Task<bool> DownloadAsync(string contentFileUrl, string localFilePath, Action<FileProgress> onProgressChanged, CancellationToken cancellationToken)
         {
             var headerResponse = await reliableClient.GetHeadersAsync(contentFileUrl, cancellationToken).ConfigureAwait(false);
 
@@ -83,6 +84,25 @@ namespace ReliableDownloader
             {
                 await DownloadAsync(headerResponse, contentFileUrl, localFilePath, onProgressChanged, cancellationToken).ConfigureAwait(false);
             }
+
+            return VerifyFileMD5(localFilePath, headerResponse);
+        }
+
+        private bool VerifyFileMD5(string localFilePath, HttpResponseMessage headerResponse)
+        {
+            bool result = false;
+            var contentMD5 = headerResponse.Content.Headers.ContentMD5;
+            using (var md5 = MD5.Create())
+            {
+                using (var stream = File.OpenRead(localFilePath))
+                {
+                    var bytesFoeMD5 = md5.ComputeHash(stream);
+                    if (contentMD5.SequenceEqual(bytesFoeMD5))
+                        result = true;
+                }
+            }
+
+            return result;
         }
 
         private async Task DownloadAsync(HttpResponseMessage headerResponse, string contentFileUrl, string localFilePath, Action<FileProgress> onProgressChanged, CancellationToken cancellationToken)
@@ -215,7 +235,7 @@ namespace ReliableDownloader
         /// <summary>
         /// Cancels all the downloads
         /// We can customize the cancel for individual downloads
-        /// Invest a download id, and have a dictionary for caching individual tokens
+        /// Invent a download id, and have a dictionary for caching individual tokens
         /// And then cancel which ever is required to be cancelled.
         /// </summary>
         public void CancelDownloads()

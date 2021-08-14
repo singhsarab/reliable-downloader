@@ -16,10 +16,10 @@ namespace ReliableDownloader
             FileDownloader fileDownloader = new FileDownloader();
 
             string exampleUrl = @"https://installerstaging.accurx.com/chain/3.55.11050.0/accuRx.Installer.Local.msi";
-            string exampleFilePath = "C:/Users/sasin/MyFile1.msi";
+            string exampleFilePath = "C:/Users/sasin/accuRx.Installer.Local.msi";
 
             // TODO: Write a better progress indicator
-            Task t1 = fileDownloader.DownloadFile(exampleUrl, exampleFilePath,
+            Task<bool> downloadTask = fileDownloader.DownloadFile(exampleUrl, exampleFilePath,
                 progress => { Console.WriteLine($"MyFile1.msi File Progress :{progress.ProgressPercent}% and Remaining Time in secs : {progress.EstimatedRemaining.Value.TotalSeconds}"); });
 
             /* Run another download in parallel
@@ -29,8 +29,13 @@ namespace ReliableDownloader
                 progress => { Console.WriteLine($"MyFile2.msi File Progress :{progress.ProgressPercent}% and Remaining Time in secs : {progress.EstimatedRemaining.Value.TotalSeconds}"); });
             */
 
-            t1.Start();
-            t1.Wait();
+            downloadTask.Start();
+            downloadTask.Wait();
+
+            if (downloadTask.Result)
+                Console.WriteLine("File downloaded successfully");
+            else
+                Console.WriteLine("File download had some error.");
 
             /* Testing Cancel
              * Remove the wait above and sleep for 4 seconds and then call cancel
