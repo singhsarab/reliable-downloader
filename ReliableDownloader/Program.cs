@@ -1,18 +1,45 @@
-﻿using System;
-using System.Threading.Tasks;
-using ReliableDownloader;
+﻿// --------------------------------------------------------------------------------------------------------------------
+// <copyright file="Program.cs">
+//   Copyright 2021 Sarabjot Singh. All rights reserved.
+// </copyright>
+// --------------------------------------------------------------------------------------------------------------------
 
 namespace ReliableDownloader
 {
+    using System;
+    using System.Threading.Tasks;
+
     internal class Program
     {
-        public static async Task Main(string[] args)
+        public static void Main(string[] args)
         {
-            // If this url 404's, you can get a live one from https://installerstaging.accurx.com/chain/latest.json.
-            var exampleUrl = "https://installerstaging.accurx.com/chain/3.55.11050.0/accuRx.Installer.Local.msi";
-            var exampleFilePath = "C:/Users/[USER]/myfirstdownload.msi";
-            var fileDownloader = new FileDownloader();
-            await fileDownloader.DownloadFile(exampleUrl, exampleFilePath, progress => { Console.WriteLine($"Percent progress is {progress.ProgressPercent}"); });
+            FileDownloader fileDownloader = new FileDownloader();
+
+            string exampleUrl = @"https://installerstaging.accurx.com/chain/3.55.11050.0/accuRx.Installer.Local.msi";
+            string exampleFilePath = "C:/Users/sasin/MyFile1.msi";
+
+            // TODO: Write a better progress indicator
+            Task t1 = fileDownloader.DownloadFile(exampleUrl, exampleFilePath,
+                progress => { Console.WriteLine($"MyFile1.msi File Progress :{progress.ProgressPercent}% and Remaining Time in secs : {progress.EstimatedRemaining.Value.TotalSeconds}"); });
+
+            /* Run another download in parallel
+            
+            exampleFilePath = "C:/Users/sasin/MyFile2.msi";
+            Task t2 = fileDownloader.DownloadFile(exampleUrl, exampleFilePath,
+                progress => { Console.WriteLine($"MyFile2.msi File Progress :{progress.ProgressPercent}% and Remaining Time in secs : {progress.EstimatedRemaining.Value.TotalSeconds}"); });
+            */
+
+            t1.Start();
+            t1.Wait();
+
+            /* Testing Cancel
+             * Remove the wait above and sleep for 4 seconds and then call cancel
+            
+            Thread.Sleep(4000);
+            Console.WriteLine("Cancelling downloads...");
+            fileDownloader.CancelDownloads();
+            
+             */
         }
     }
 }

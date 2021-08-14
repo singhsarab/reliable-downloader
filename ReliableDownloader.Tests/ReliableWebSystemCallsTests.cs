@@ -13,8 +13,11 @@ namespace ReliableDownloader.Tests
     using System.Threading;
     using System.Threading.Tasks;
 
+    [TestFixture]
     public class ReliableWebSystemCallsTests
     {
+        private string filePathUrl = "https://foobar.com/images/hello.jpg";
+
         Mock<IWebSystemCalls> mockWebSystemCalls;
         ReliableWebSystemCalls reliableWebSystemCalls;
 
@@ -33,9 +36,9 @@ namespace ReliableDownloader.Tests
                 () => new HttpResponseMessage());
 
             var token = new CancellationTokenSource().Token;
-            await reliableWebSystemCalls.DownloadContent("", token);
+            await reliableWebSystemCalls.DownloadContent(filePathUrl, token);
 
-            mockWebSystemCalls.Verify(x => x.DownloadContent("", token), Times.Once);
+            mockWebSystemCalls.Verify(x => x.DownloadContent(filePathUrl, token), Times.Once);
         }
 
         [Test]
@@ -54,11 +57,11 @@ namespace ReliableDownloader.Tests
                 });
 
             var tokenSource = new CancellationTokenSource();
-            Task task = reliableWebSystemCalls.DownloadContent("", tokenSource.Token);
+            Task task = reliableWebSystemCalls.DownloadContent(filePathUrl, tokenSource.Token);
 
             Thread.Sleep(4000);
 
-            mockWebSystemCalls.Verify(x => x.DownloadContent("", tokenSource.Token), Times.Exactly(3));
+            mockWebSystemCalls.Verify(x => x.DownloadContent(filePathUrl, tokenSource.Token), Times.Exactly(3));
         }
     }
 }
