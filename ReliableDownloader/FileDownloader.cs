@@ -65,7 +65,7 @@ namespace ReliableDownloader
 
             return new Task<bool>(() =>
             {
-                var result = DownloadAsync(contentFileUrl, localFilePath, onProgressChanged, tokenSource.Token).ConfigureAwait(false);
+                DownloadAsync(contentFileUrl, localFilePath, onProgressChanged, tokenSource.Token).Wait();
                 return true;
             }, tokenSource.Token);
         }
